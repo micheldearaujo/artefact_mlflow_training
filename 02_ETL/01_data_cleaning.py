@@ -42,7 +42,7 @@ fishDF = fishDF.drop("Species")
 
 # COMMAND ----------
 
-train, test = fishDF.randomSplit([0.8, 0.2], seed=42)
+train, test = fishDF.randomSplit([1-model_config['TEST_SIZE'], model_config['TEST_SIZE']], seed=42)
 
 # COMMAND ----------
 
@@ -53,7 +53,7 @@ train, test = fishDF.randomSplit([0.8, 0.2], seed=42)
 
 fishDF.write.mode("overwrite").saveAsTable("default.fish_cleaned")
 train.write.mode("overwrite").saveAsTable("default.fish_cleaned_training")
-test.write.mode("overwrite").saveAsTable("default.fish_cleaned_testing")
+test.write.mode("overwrite").saveAsTable("default.fish_cleaned_validation")
 
 # COMMAND ----------
 
