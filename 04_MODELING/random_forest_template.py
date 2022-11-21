@@ -1,12 +1,19 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC ## Modeling a simple Random Forest using MLflow
+# MAGIC # MLflow
 # MAGIC 
-# MAGIC O objetivo desta primeira seção é se familarizar com o MLflow e conhecer os conceitos básicos, como:
+# MAGIC <a href="https://mlflow.org/docs/latest/concepts.html" target="_blank">MLflow</a> seeks to address these three core issues:
 # MAGIC 
-# MAGIC - Experiments
-# MAGIC - Runs
-# MAGIC - Tracking
+# MAGIC * It’s difficult to keep track of experiments
+# MAGIC * It’s difficult to reproduce code
+# MAGIC * There’s no standard way to package and deploy models
+# MAGIC 
+# MAGIC In the past, when examining a problem, you would have to manually keep track of the many models you created, as well as their associated parameters and metrics. This can quickly become tedious and take up valuable time, which is where MLflow comes in.
+# MAGIC 
+# MAGIC MLflow is pre-installed on the Databricks Runtime for ML.
+# MAGIC 
+# MAGIC ## ![Spark Logo Tiny](https://files.training.databricks.com/images/105/logo_spark_tiny.png) In this lesson you:<br>
+# MAGIC * Use MLflow to track experiments, log metrics, and compare runs
 
 # COMMAND ----------
 

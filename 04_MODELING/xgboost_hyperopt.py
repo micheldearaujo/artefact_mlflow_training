@@ -172,19 +172,19 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     fig, axs = plt.subplots(figsize=(12, 8))
     axs.scatter(x=y_test, y=predictions)
     axs.set_title(f"XGBoost Predicted versus ground truth\n R2 = {r2} | RMSE = {rmse} | MAPE = {mape}")
-    axs.set_xlabel(f"True {TARGET_VARIABLE}")
-    axs.set_ylabel(f"Predicted {TARGET_VARIABLE}")
-    plt.savefig("artifacts/scatter_plot_xgboost.png")
+    axs.set_xlabel(f"True {model_config['TARGET_VARIABLE']}")
+    axs.set_ylabel(f"Predicted {model_config['TARGET_VARIABLE']}")
+    plt.savefig("scatter_plot_xgboost.png")
     fig.show()
 
-    mlflow.log_artifact("artifacts/scatter_plot_xgboost.png")
+    mlflow.log_artifact("scatter_plot_xgboost.png")
 
     mlflow.sklearn.log_model(model_fit, RUN_NAME)
 
-    np.savetxt('artifacts/predictions_xgboost.csv', predictions, delimiter=',')
+    np.savetxt('predictions_xgboost.csv', predictions, delimiter=',')
 
     # Log the saved table as an artifact
-    mlflow.log_artifact("artifacts/predictions_xgboost.csv")
+    mlflow.log_artifact("predictions_xgboost.csv")
 
     # Convert the residuals to a pandas dataframe to take advantage of graphics  
     predictions_df = pd.DataFrame(data = predictions - y_test)
@@ -195,5 +195,5 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     plt.ylabel("Residual")
     plt.title("Residuals")
 
-    plt.savefig("artifacts/residuals_plot_xgboost.png")
-    mlflow.log_artifact("artifacts/residuals_plot_xgboost.png")
+    plt.savefig("residuals_plot_xgboost.png")
+    mlflow.log_artifact("residuals_plot_xgboost.png")

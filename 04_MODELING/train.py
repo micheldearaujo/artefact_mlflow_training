@@ -30,13 +30,17 @@ train_df = spark.sql("SELECT * FROM default.fish_cleaned_training").toPandas()
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #### 2.1 Split the dataset
 
 # COMMAND ----------
 
-X = train_df.drop(TARGET_VARIABLE, axis=1)
-y = train_df[TARGET_VARIABLE]
+X = train_df.drop(model_config['TARGET_VARIABLE'], axis=1)
+y = train_df[model_config['TARGET_VARIABLE']]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config['TEST_SIZE'], random_state=42)
 

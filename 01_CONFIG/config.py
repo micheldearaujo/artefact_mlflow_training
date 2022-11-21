@@ -187,3 +187,15 @@ randomforest_hyperparameter_config = {
     'min_samples_split': hp.choice('min_samples_split', [2, 5, 10, 20]),
     'n_estimators': hp.choice('n_estimators', [200, 400, 800, 1000, 1200, 1600, 2000])
 }
+
+# COMMAND ----------
+
+try:
+  os.mkdir("/artifacts")
+  
+except:
+  print("Folder already exists")
+
+# COMMAND ----------
+
+

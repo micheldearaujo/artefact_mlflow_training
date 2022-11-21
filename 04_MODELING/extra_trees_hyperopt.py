@@ -161,12 +161,12 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     fig, axs = plt.subplots(figsize=(12, 8))
     axs.scatter(x=y_test, y=predictions)
     axs.set_title(f"ETR Predicted versus ground truth\n R2 = {r2} | RMSE = {rmse} | MAPE = {mape}")
-    axs.set_xlabel(f"True {TARGET_VARIABLE}")
-    axs.set_ylabel(f"Predicted {TARGET_VARIABLE}")
-    plt.savefig("artifacts/scatter_plot_etr.png")
+    axs.set_xlabel(f"True {model_config['TARGET_VARIABLE']}")
+    axs.set_ylabel(f"Predicted {model_config['TARGET_VARIABLE']}")
+    plt.savefig("scatter_plot_etr.png")
     fig.show()
 
-    np.savetxt('artifacts/predictions_etr.csv', predictions, delimiter=',')
+    np.savetxt('predictions_etr.csv', predictions, delimiter=',')
     # Convert the residuals to a pandas dataframe to take advantage of graphics  
     predictions_df = pd.DataFrame(data = predictions - y_test)
 
@@ -175,9 +175,17 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     plt.xlabel("Observation")
     plt.ylabel("Residual")
     plt.title("Residuals")
-    plt.savefig("artifacts/residuals_plot_etr.png")
+    plt.savefig("residuals_plot_etr.png")
     
     # Log some artifacts
-    mlflow.log_artifact("artifacts/scatter_plot_etr.png")
-    mlflow.log_artifact("artifacts/residuals_plot_etr.png")
-    mlflow.log_artifact("artifacts/predictions_etr.csv")
+    mlflow.log_artifact("scatter_plot_etr.png")
+    mlflow.log_artifact("residuals_plot_etr.png")
+    mlflow.log_artifact("predictions_etr.csv")
+
+# COMMAND ----------
+
+os.listdir('/Workspace/')
+
+# COMMAND ----------
+
+
