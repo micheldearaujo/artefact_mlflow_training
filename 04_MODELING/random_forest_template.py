@@ -26,19 +26,21 @@
 
 # COMMAND ----------
 
-RUN_NAME = 'RandomForest_Hyperopt'
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### 2.0 Load the data
 
 # COMMAND ----------
 
+# Load the data 
 train_df = spark.sql("SELECT * FROM default.fish_cleaned_training").toPandas()
+
+# COMMAND ----------
+
+# split between X and y
 X = train_df.drop(model_config['TARGET_VARIABLE'], axis=1)
 y = train_df[model_config['TARGET_VARIABLE']]
 
+# Perform the train test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config['TEST_SIZE'], random_state=42)
 
 # COMMAND ----------
@@ -88,13 +90,22 @@ plt.show()
 
 # COMMAND ----------
 
+# Define some parameters
+max_depth = 5
+min_samples_leaf = 3
+min_samples_split = 3
+n_estimators = 200
+random_state = 42
+
+# COMMAND ----------
+
 # Create and instance
 model = RandomForestRegressor(
-    max_depth = 5,
-    min_samples_leaf = 3,
-    min_samples_split = 3,
-    n_estimators = 200,
-    random_state = 42,
+    max_depth = max_depth,
+    min_samples_leaf = min_samples_leaf,
+    min_samples_split = min_samples_split,
+    n_estimators = n_estimators,
+    random_state = random_state,
 )
 
 # Fit the model
@@ -131,7 +142,14 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 4.0 Using MLflow
+# MAGIC ### 4.0 Using MLflow Tracking
+# MAGIC <i18n value="9ab8c080-9012-4f38-8b01-3846c1531a80"/>
+# MAGIC 
+# MAGIC #### MLflow Tracking
+# MAGIC 
+# MAGIC MLflow Tracking is a logging API specific for machine learning and agnostic to libraries and environments that do the training.  It is organized around the concept of **runs**, which are executions of data science code.  Runs are aggregated into **experiments** where many runs can be a part of a given experiment and an MLflow server can host many experiments.
+# MAGIC 
+# MAGIC You can use <a href="https://mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_experiment" target="_blank">mlflow.set_experiment()</a> to set an experiment, but if you do not specify an experiment, it will automatically be scoped to this notebook.
 
 # COMMAND ----------
 
@@ -140,14 +158,19 @@ plt.show()
 
 # COMMAND ----------
 
+RUN_NAME = 'RandomForest'
+
+# COMMAND ----------
+
 with mlflow.start_run(run_name = RUN_NAME) as run:
+  
     # Create and instance
     model = RandomForestRegressor(
-        max_depth = 5,
-        min_samples_leaf = 3,
-        min_samples_split = 3,
-        n_estimators = 200,
-        random_state = 42,
+        max_depth = max_depth,
+        min_samples_leaf = min_samples_leaf,
+        min_samples_split = min_samples_split,
+        n_estimators = n_estimators,
+        random_state = random_state,
     )
 
     # Fit the model
@@ -167,16 +190,25 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC #### 4.2 Try to log some metrics and parameters
+# MAGIC %md <i18n value="82786653-4926-4790-b867-c8ccb208b451"/>
+# MAGIC 
+# MAGIC 
+# MAGIC 
+# MAGIC #### Track Runs
+# MAGIC 
+# MAGIC Each run can record the following information:<br><br>
+# MAGIC 
+# MAGIC - **Parameters:** Key-value pairs of input parameters such as the number of trees in a random forest model
+# MAGIC - **Metrics:** Evaluation metrics such as RMSE or Area Under the ROC Curve
+# MAGIC - **Artifacts:** Arbitrary output files in any format.  This can include images, pickled models, and data files
+# MAGIC - **Source:** The code that originally ran the experiment
+# MAGIC 
+# MAGIC **NOTE**: For Spark models, MLflow can only log PipelineModels.
 
 # COMMAND ----------
 
-max_depth = 5
-min_samples_leaf = 3
-min_samples_split = 3
-n_estimators = 200
-random_state = 42
+# MAGIC %md
+# MAGIC #### 4.2 Try to log some metrics and parameters
 
 # COMMAND ----------
 
@@ -204,6 +236,17 @@ with mlflow.start_run(run_name = RUN_NAME+'_with_log') as run:
     mape = round(mean_absolute_percentage_error(y_test, y_pred),3 )
     r2 = round(r2_score(y_test, y_pred), 3)
     
+    # Plot the regression results
+    fig, axs = plt.subplots(figsize=(12, 8))
+
+    plt.scatter(y_test, y_pred)
+    plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
+    plt.xlabel("True values")
+    plt.ylabel("Predicted values")
+    
+    # Save the figure to log it later
+    plt.savefig("r2_figure.png")
+    plt.show()
     
     # Log the metrics
     mlflow.log_metric("MAPE", mape)
@@ -217,19 +260,10 @@ with mlflow.start_run(run_name = RUN_NAME+'_with_log') as run:
     mlflow.log_param("random_state", random_state)
     
     # Log the model
-    mlflow.sklearn.log_model(model, "artifacts/random_forest_model")
+    mlflow.sklearn.log_model(model, "random_forest_model")
     
-    # Log the evaluation figure
-    fig, axs = plt.subplots(figsize=(12, 8))
-
-    plt.scatter(y_test, y_pred)
-    plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
-    plt.xlabel("True values")
-    plt.ylabel("Predicted values")
-    
-    plt.savefig("artifacts/r2_figure.png")
-    
-    mlflow.log_artifact('artifacts/r2_figure.png')
+    # Now log the figure
+    mlflow.log_artifact('r2_figure.png')
 
 # COMMAND ----------
 
@@ -269,9 +303,10 @@ experiment_id = run.info.experiment_id
 
 # COMMAND ----------
 
-runs = mlflow.search_runs([experiment_id],
-                         order_by =["metrics.MAPE ASC"] # We can order by some column
-                         )
+runs = mlflow.search_runs(
+  experiment_ids =[experiment_id],
+ order_by = ["metrics.MAPE ASC"] # We can order by some column
+ )
 
 # COMMAND ----------
 

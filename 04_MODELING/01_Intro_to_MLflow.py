@@ -26,11 +26,6 @@
 
 # COMMAND ----------
 
-# Create a name for this run
-RUN_NAME = ...
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### 2.0 Load the data
 
@@ -39,10 +34,11 @@ RUN_NAME = ...
 # Load the data and split between X and y
 train_df = spark.sql("SELECT * FROM default.fish_cleaned_training").toPandas()
 
-X = ...
-y = ...
+X = train_df.drop(model_config['TARGET_VARIABLE'], axis=1)
+y = train_df[model_config['TARGET_VARIABLE']]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config['TEST_SIZE'], random_state=42)
+# Perform the train test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config['TEST_SIZE'], random_state = 42)
 
 # COMMAND ----------
 
@@ -53,10 +49,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config
 # COMMAND ----------
 
 # Create and instance
-model = <...>
+model = RandomForestRegressor()
 
 # Fit the model
-model.fit(...)
+model.fit(X_train, y_train)
 
 # COMMAND ----------
 
@@ -66,15 +62,22 @@ model.fit(...)
 # COMMAND ----------
 
 # Perform predictions
-
+y_pred = model.predict(X_test)
 
 # Get an evaluation metric
-mape = ...
-r2 = ...
+mape = round(mean_absolute_percentage_error(y_test, y_pred), 3)
+r2 = round(r2_score(y_test, y_pred), 3)
 
 # COMMAND ----------
 
 # Plot the scatter plot True versus Predicted
+fig, axs = plt.subplots(figsize=(12, 8))
+
+plt.scatter(y_test, y_pred)
+plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
+plt.xlabel("True values")
+plt.ylabel("Predicted values")
+plt.show()
 
 # COMMAND ----------
 
@@ -94,11 +97,15 @@ random_state = 42
 
 # Create and instance
 model = RandomForestRegressor(
-...
+  max_depth = 5,
+  min_samples_leaf = 3,
+  min_samples_split = 3,
+  n_estimators = 200,
+  random_state = 42
 )
 
 # Fit the model
-...
+model.fit(X_train, y_train)
 
 # COMMAND ----------
 
@@ -108,15 +115,23 @@ model = RandomForestRegressor(
 # COMMAND ----------
 
 # Perform predictions
-y_pred = 
+y_pred = model.predict(X_test)
 
 # Get an evaluation metric
-mape = ...
-r2 = ...
+mape = round(mean_absolute_percentage_error(y_test, y_pred), 3)
+r2 = round(r2_score(y_test, y_pred), 3)
 
 # COMMAND ----------
 
 # Plot the scatter plot True versus Predicted
+# Plot the scatter plot True versus Predicted
+fig, axs = plt.subplots(figsize=(12, 8))
+
+plt.scatter(y_test, y_pred)
+plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
+plt.xlabel("True values")
+plt.ylabel("Predicted values")
+plt.show()
 
 # COMMAND ----------
 
@@ -137,6 +152,42 @@ r2 = ...
 
 # COMMAND ----------
 
+RUN_NAME = 'RandomForest'
+
+# COMMAND ----------
+
+# Run it with MLFlow
+with mlflow.start_run(run_name = RUN_NAME):
+  
+  model = RandomForestRegressor(
+  max_depth = 5,
+  min_samples_leaf = 3,
+  min_samples_split = 3,
+  n_estimators = 200,
+  random_state = 42
+  )
+  
+  model.fit(X_train, y_train)
+  
+  # Perform predictions
+  y_pred = model.predict(X_test)
+
+  # Get an evaluation metric
+  mape = round(mean_absolute_percentage_error(y_test, y_pred), 3)
+  r2 = round(r2_score(y_test, y_pred), 3)
+  
+  # Plot the scatter plot True versus Predicted
+  # Plot the scatter plot True versus Predicted
+  fig, axs = plt.subplots(figsize=(12, 8))
+
+  plt.scatter(y_test, y_pred)
+  plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
+  plt.xlabel("True values")
+  plt.ylabel("Predicted values")
+  plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md <i18n value="82786653-4926-4790-b867-c8ccb208b451"/>
 # MAGIC 
 # MAGIC 
@@ -154,25 +205,56 @@ r2 = ...
 
 # COMMAND ----------
 
-# Run it with MLFlow
-#with mlflow.start_run() ...
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC #### 4.2 Try to log some metrics and parameters
 
 # COMMAND ----------
 
-max_depth = 5
-min_samples_leaf = 3
-min_samples_split = 3
-n_estimators = 200
-random_state = 42
+# Run it with MLFlow
+with mlflow.start_run(run_name = RUN_NAME+'_with_logging'):
+  
+  model = RandomForestRegressor(
+  max_depth = 5,
+  min_samples_leaf = 3,
+  min_samples_split = 3,
+  n_estimators = 200,
+  random_state = 42
+  )
+  
+  model.fit(X_train, y_train)
+  
+  # Perform predictions
+  y_pred = model.predict(X_test)
 
-# COMMAND ----------
+  # Get an evaluation metric
+  mape = round(mean_absolute_percentage_error(y_test, y_pred), 3)
+  r2 = round(r2_score(y_test, y_pred), 3)
+  
+  # Plot the scatter plot True versus Predicted
+  # Plot the scatter plot True versus Predicted
+  fig, axs = plt.subplots(figsize=(12, 8))
 
-# Run the MLflow with logging metrics, parameters and artifacts
+  plt.scatter(y_test, y_pred)
+  plt.title(f"Predicted versus Ground truth\nR2 = {r2} | MAPE = {mape}")
+  plt.xlabel("True values")
+  plt.ylabel("Predicted values")
+  #plt.show()
+  
+  
+  # Log metrics
+  mlflow.log_metric("MAPE", mape)
+  mlflow.log_metric("R2", r2)
+  
+  # Log parameters
+  mlflow.log_param("max_depth", max_depth)
+  mlflow.log_param("n_estimators", n_estimators)
+  
+  # Log model
+  mlflow.sklearn.log_model(model, "simple_randomforest")
+  
+  # Log the figure
+  plt.savefig("r2_figure.png")
+  mlflow.log_artifact("r2_figure.png")
 
 # COMMAND ----------
 
@@ -204,10 +286,7 @@ experiment_id = run...
 
 # COMMAND ----------
 
-runs = mlflow.search_runs(
-    
-    # We can order by some column
-                         )
+runs = ...
 
 # COMMAND ----------
 
