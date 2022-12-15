@@ -65,9 +65,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=model_config
 # Create a dictionary with the parameter name and the values
 # Use hp.choice for a list of integers or hp.uniform for a range of floats
 randomforest_hyperparameter_config = {
-    'bootstrap': <complete>
-    'max_depth': <complete>
-    'max_features': <complete>
+    'bootstrap': hp.choice('bootstrap', [True, False]),
+    'max_depth': hp.choice('max_depth', [10, 20, 30, 90, 100, None]),
+    'max_features': hp.choice('max_features', ['auto', 'sqrt']),
     'min_samples_leaf': hp.choice('min_samples_leaf', [1, 2, 5]),
     'min_samples_split': hp.choice('min_samples_split', [2, 5, 20]),
     'n_estimators': hp.choice('n_estimators', [200, 400, 800, 1000])
@@ -92,8 +92,7 @@ def objective(search_space):
   # Create the model instance, with parameters from the grid
   model = RandomForestRegressor(
       random_state = random_forest_fixed_model_config['RANDOM_STATE'], # Some fixed model parameters
-      ## Specify the search_space here
-      # <complete>
+      **search_space ## Specify the search_space here
   )
   
  # Train the model
@@ -107,18 +106,18 @@ def objective(search_space):
   mse = mean_squared_error(y_test, y_pred)
   
   # Return the metrics
-  # <complete>
+  return {'loss': mse, 'status': STATUS_OK}
 
 # COMMAND ----------
 
 # Get the search_space
-
+search_space = randomforest_hyperparameter_config
 
 # Define which algorithm to optimise. In this case, we will use the # Tree of Parzen Estimators, that is bayesian
-
+algorithm = tpe.suggest 
 
 # The Trials Object. SparkTrials for single-node algorithms (sklearn) or Trials for distributed libraries (SparkML)
-
+spark_trials = SparkTrials(parallelism=model_config['PARALELISM']) 
 
 # COMMAND ----------
 
@@ -126,7 +125,13 @@ def objective(search_space):
 
 with mlflow.start_run(run_name=RUN_NAME):
   
-    run_params = 
+    best_params = fmin(
+        fn=objective, # Objective function
+        space=search_space, # Search space
+        algo=algorithm, # Algorithm
+        max_evals=50, #model_config['MAX_EVALS'], # Max number of iterations
+        trials=spark_trials # Spark Trails
+    )
     
 # This function will return the best parameters
 
@@ -137,7 +142,8 @@ best_params
 # COMMAND ----------
 
 # Get the best parameters
-
+rf_best_param_names = space_eval(search_space, best_params)
+rf_best_param_names
 
 # COMMAND ----------
 
@@ -151,7 +157,12 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     random_state = random_forest_fixed_model_config['RANDOM_STATE']
     
     # Getting the best parameters configuration
-    # <complete>
+    bootstrap = rf_best_param_names['bootstrap']
+    max_depth = rf_best_param_names['max_depth']
+    max_features = rf_best_param_names['max_features']
+    min_samples_leaf = rf_best_param_names['min_samples_leaf']
+    min_samples_split = rf_best_param_names['min_samples_split']
+    n_estimators = rf_best_param_names['n_estimators']
 
     # Create the model instance if the selected parameters
     model = RandomForestRegressor(
@@ -174,8 +185,15 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     # Use the model to make predictions on the test dataset.
     predictions = model_fit.predict(X_test)
 
-    ### Log the parameters
-    # <complete>
+    ### Log the metrics
+
+    mlflow.log_param("bootstrap", bootstrap)
+    mlflow.log_param("max_depth", max_depth)
+    mlflow.log_param("max_features", max_features)
+    mlflow.log_param("n_estimators", n_estimators)
+    mlflow.log_param("min_samples_leaf", min_samples_leaf)
+    mlflow.log_param("min_samples_split", min_samples_split)
+    mlflow.log_param("n_estimators", n_estimators)
 
     # Define a metric to use to evaluate the model.
 
@@ -190,8 +208,14 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     # MAPE
     mape = round(mean_absolute_percentage_error(y_test, predictions), 3)
 
-    # Log the metrics
-    # <complete>
+
+    mlflow.log_metric("RMSE", rmse)
+    mlflow.log_metric("R2", r2)
+    mlflow.log_metric("R2_Adj", adjust_r2)
+    mlflow.log_metric("MAPE", mape)
+
+    mlflow.log_metric('Dataset_Size', X_train.shape[0])
+    mlflow.log_metric('Number_of_variables', X_train.shape[1])
 
     fig, axs = plt.subplots(figsize=(12, 8))
     axs.scatter(x=y_test, y=predictions)
@@ -201,16 +225,14 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     plt.savefig("scatter_plot_rf.png")
     fig.show()
 
-    # Log the figure
-    # <complete>
+    mlflow.log_artifact("scatter_plot_rf.png")
 
-    # Log the model
-    # <complete>
+    mlflow.sklearn.log_model(model_fit, RUN_NAME)
 
     np.savetxt('predictions_rf.csv', predictions, delimiter=',')
 
     # Log the saved table as an artifact
-    # ...
+    mlflow.log_artifact("predictions_rf.csv")
 
     # Convert the residuals to a pandas dataframe to take advantage of graphics  
     predictions_df = pd.DataFrame(data = predictions - y_test)
@@ -220,11 +242,9 @@ with mlflow.start_run(run_name = RUN_NAME) as run:
     plt.xlabel("Observation")
     plt.ylabel("Residual")
     plt.title("Residuals")
-  
+
     plt.savefig("residuals_plot_rf.png")
-    
-    # Log the residuals plot
-    # <complete>
+    mlflow.log_artifact("residuals_plot_rf.png")
 
 # COMMAND ----------
 
