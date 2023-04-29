@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC ## Template
-# MAGIC 
+# MAGIC
 # MAGIC **Objective**: This notebook's objective is to explore the dataset and set the guidelines for modeling
-# MAGIC 
+# MAGIC
 # MAGIC **Takeaways**: The key takeaways of this notebook are:
-# MAGIC 
+# MAGIC
 # MAGIC - No missing values;
 # MAGIC - No zero values;
 # MAGIC - The target variable is not normal, but the features are near;
@@ -28,7 +28,8 @@
 
 # COMMAND ----------
 
-df = spark.sql("select * from default.fish_cleaned").toPandas()
+#df = spark.sql("select * from default.fish_cleaned").toPandas()
+df = pd.read_csv("../Fish.csv")
 
 # COMMAND ----------
 

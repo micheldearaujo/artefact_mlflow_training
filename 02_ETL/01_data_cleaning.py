@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC ## Data cleaning
-# MAGIC 
+# MAGIC
 # MAGIC **Objective**: This notebook's objective is to load the raw dataset and perform cleaning on it.
-# MAGIC 
+# MAGIC
 # MAGIC **Takeaways**:
-# MAGIC 
+# MAGIC
 # MAGIC - Droped a categorical column to facilitate the mini project
 
 # COMMAND ----------
@@ -24,7 +24,13 @@
 
 # COMMAND ----------
 
-fishDF = spark.sql("SELECT * FROM fish;")
+#fishDF = spark.sql("SELECT * FROM fish;")
+col_names = ["Species","Weight","Length1","Length2","Length3","Height","Width"]
+fishDF = pd.read_csv("../Fish.csv")
+
+# COMMAND ----------
+
+fishDF
 
 # COMMAND ----------
 
