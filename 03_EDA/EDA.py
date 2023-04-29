@@ -51,7 +51,7 @@ display(df)
 
 # COMMAND ----------
 
-sns.pairplot(data=df)
+sns.pairplot(data=df, hue='Species')
 
 # COMMAND ----------
 

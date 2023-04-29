@@ -39,7 +39,7 @@ fishDF
 
 # COMMAND ----------
 
-fishDF = fishDF.drop("Species")
+#fishDF = fishDF.drop("Species")
 
 # COMMAND ----------
 
